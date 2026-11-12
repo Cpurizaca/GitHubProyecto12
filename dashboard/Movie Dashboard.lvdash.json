@@ -48,7 +48,7 @@
       "name": "top20_profit_movies",
       "displayName": "top_20_movies_profit",
       "config": {
-        "source": "SELECT title, director, release_year, budget, revenue, profit, total_minutos, vote_count FROM catalog_movies.golden.golden_movies WHERE profit IS NOT NULL\n  AND ((year_from = 0 AND year_to = 9999) OR release_year BETWEEN year_from AND year_to)\nORDER BY profit DESC LIMIT 20\n",
+        "source": "SELECT title, director, release_year, budget, revenue, profit, total_minutos, vote_count, status_ticket FROM catalog_movies.golden.golden_movies WHERE profit IS NOT NULL\n  AND ((year_from = 0 AND year_to = 9999) OR release_year BETWEEN year_from AND year_to)\nORDER BY profit DESC LIMIT 20\n",
         "measures": [
           {
             "name": "total_profit",
@@ -80,6 +80,9 @@
           },
           {
             "expr": "vote_count"
+          },
+          {
+            "expr": "status_ticket"
           },
           {
             "name": "duration_hm",
@@ -288,6 +291,10 @@
                       "expression": "`title`"
                     },
                     {
+                      "name": "status_ticket",
+                      "expression": "`status_ticket`"
+                    },
+                    {
                       "name": "duration_hm",
                       "expression": "`duration_hm`"
                     },
@@ -315,8 +322,8 @@
                   "disaggregated": true,
                   "orders": [
                     {
-                      "direction": "ASC",
-                      "expression": "`budget`"
+                      "direction": "DESC",
+                      "expression": "`profit`"
                     }
                   ]
                 }
@@ -325,7 +332,10 @@
             "spec": {
               "frame": {
                 "showTitle": true,
-                "title": "Top 20 Movies by Profit"
+                "title": {
+                  "value": "Top 20 Movies by Profit",
+                  "fields": []
+                }
               },
               "version": 2,
               "widgetType": "table",
@@ -345,6 +355,10 @@
                     "fieldName": "title",
                     "columnWidth": 332,
                     "displayName": "Movie"
+                  },
+                  {
+                    "fieldName": "status_ticket",
+                    "displayName": "Ticket Status"
                   },
                   {
                     "fieldName": "duration_hm",
@@ -404,9 +418,9 @@
                 ],
                 "rowOrder": [
                   {
-                    "by": "column",
+                    "by": "column-reversed",
                     "field": {
-                      "index": 4
+                      "index": 7
                     }
                   }
                 ]
