@@ -1,0 +1,898 @@
+{
+  "datasets": [
+    {
+      "name": "f0c4c13a",
+      "displayName": "golden_movies",
+      "config": {
+        "source": "catalog_movies.golden.golden_movies",
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ],
+        "filter": "(year_from = 0 AND year_to = 9999) OR release_year BETWEEN year_from AND year_to",
+        "version": "1.1",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "year_from",
+            "dataType": "INT",
+            "default": 0.0
+          },
+          {
+            "name": "year_to",
+            "dataType": "INT",
+            "default": 9999.0
+          }
+        ]
+      }
+    },
+    {
+      "name": "2e56bcd2",
+      "displayName": "director_resume",
+      "queryLines": [
+        "select director, count(movie_id) movies_qty,  sum(budget) total_budget, \r\n",
+        "    sum(revenue) total_revenue, sum(profit) total_profit\r\n",
+        "from catalog_movies.golden.golden_movies \r\n",
+        "group by director"
+      ]
+    },
+    {
+      "name": "top20_profit_movies",
+      "displayName": "top_20_movies_profit",
+      "config": {
+        "source": "SELECT title, director, release_year, budget, revenue, profit, total_minutos, vote_count FROM catalog_movies.golden.golden_movies WHERE profit IS NOT NULL\n  AND ((year_from = 0 AND year_to = 9999) OR release_year BETWEEN year_from AND year_to)\nORDER BY profit DESC LIMIT 20\n",
+        "measures": [
+          {
+            "name": "total_profit",
+            "expr": "SUM(profit)"
+          }
+        ],
+        "version": "1.1",
+        "dimensions": [
+          {
+            "expr": "title"
+          },
+          {
+            "expr": "director"
+          },
+          {
+            "expr": "release_year"
+          },
+          {
+            "expr": "budget"
+          },
+          {
+            "expr": "revenue"
+          },
+          {
+            "expr": "profit"
+          },
+          {
+            "expr": "total_minutos"
+          },
+          {
+            "expr": "vote_count"
+          },
+          {
+            "name": "duration_hm",
+            "expr": "concat(CAST(floor(total_minutos / 60) AS STRING), 'h ', lpad(CAST(total_minutos % 60 AS STRING), 2, '0'), 'm')"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "year_from",
+            "dataType": "INT",
+            "default": 0.0
+          },
+          {
+            "name": "year_to",
+            "dataType": "INT",
+            "default": 9999.0
+          }
+        ]
+      }
+    },
+    {
+      "name": "movies_by_genre",
+      "displayName": "movies_by_genre",
+      "config": {
+        "source": "SELECT movie_id, release_year, trim(g) AS genre FROM catalog_movies.golden.golden_movies LATERAL VIEW explode(split(genres, ',')) t AS g WHERE genres IS NOT NULL AND trim(g) <> ''\n  AND ((year_from = 0 AND year_to = 9999) OR release_year BETWEEN year_from AND year_to)\n",
+        "measures": [
+          {
+            "name": "movies_qty",
+            "expr": "COUNT(DISTINCT movie_id)"
+          }
+        ],
+        "version": "1.1",
+        "dimensions": [
+          {
+            "expr": "genre"
+          },
+          {
+            "expr": "release_year"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "year_from",
+            "dataType": "INT",
+            "default": 0.0
+          },
+          {
+            "name": "year_to",
+            "dataType": "INT",
+            "default": 9999.0
+          }
+        ]
+      }
+    },
+    {
+      "name": "top10_genres",
+      "displayName": "top_10_genres",
+      "config": {
+        "source": "SELECT trim(g) AS genre, COUNT(DISTINCT movie_id) AS movies_qty FROM catalog_movies.golden.golden_movies LATERAL VIEW explode(split(genres, ',')) t AS g WHERE genres IS NOT NULL AND trim(g) <> ''\n  AND ((year_from = 0 AND year_to = 9999) OR release_year BETWEEN year_from AND year_to)\nGROUP BY trim(g) ORDER BY movies_qty DESC LIMIT 10\n",
+        "measures": [
+          {
+            "name": "total_movies",
+            "expr": "SUM(movies_qty)",
+            "comment": "Total de películas por género"
+          }
+        ],
+        "version": "1.1",
+        "dimensions": [
+          {
+            "expr": "genre"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "year_from",
+            "dataType": "INT",
+            "default": 0.0
+          },
+          {
+            "name": "year_to",
+            "dataType": "INT",
+            "default": 9999.0
+          }
+        ]
+      }
+    },
+    {
+      "name": "top10_directors_profit",
+      "displayName": "top_10_directors_profit",
+      "config": {
+        "source": "SELECT director, SUM(profit) AS total_profit_raw, COUNT(movie_id) AS movies_qty_raw FROM catalog_movies.golden.golden_movies WHERE director IS NOT NULL AND profit IS NOT NULL\n  AND ((year_from = 0 AND year_to = 9999) OR release_year BETWEEN year_from AND year_to)\nGROUP BY director ORDER BY total_profit_raw DESC LIMIT 10\n",
+        "measures": [
+          {
+            "name": "total_profit",
+            "expr": "SUM(total_profit_raw)"
+          },
+          {
+            "name": "movies_qty",
+            "expr": "SUM(movies_qty_raw)"
+          }
+        ],
+        "version": "1.1",
+        "dimensions": [
+          {
+            "expr": "director"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "year_from",
+            "dataType": "INT",
+            "default": 0.0
+          },
+          {
+            "name": "year_to",
+            "dataType": "INT",
+            "default": 9999.0
+          }
+        ]
+      }
+    },
+    {
+      "name": "years_list",
+      "displayName": "years_list",
+      "config": {
+        "source": "catalog_movies.golden.golden_movies",
+        "measures": [
+          {
+            "name": "movies_count",
+            "expr": "COUNT(*)"
+          }
+        ],
+        "filter": "release_year IS NOT NULL",
+        "version": "1.1",
+        "dimensions": [
+          {
+            "expr": "release_year"
+          }
+        ]
+      }
+    },
+    {
+      "name": "years_list_to",
+      "displayName": "years_list_to",
+      "config": {
+        "source": "catalog_movies.golden.golden_movies",
+        "measures": [
+          {
+            "name": "movies_count",
+            "expr": "COUNT(*)"
+          }
+        ],
+        "filter": "release_year IS NOT NULL",
+        "version": "1.1",
+        "dimensions": [
+          {
+            "expr": "release_year"
+          }
+        ]
+      }
+    }
+  ],
+  "pages": [
+    {
+      "name": "684b7db8",
+      "displayName": "Movie",
+      "layout": [
+        {
+          "widget": {
+            "name": "728df401",
+            "spec": {
+              "widgetType": "text",
+              "version": 1,
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "### MOVIE DASHBOARD"
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "top20_profit_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top20_profit_movies",
+                  "fields": [
+                    {
+                      "name": "release_year",
+                      "expression": "`release_year`"
+                    },
+                    {
+                      "name": "title",
+                      "expression": "`title`"
+                    },
+                    {
+                      "name": "duration_hm",
+                      "expression": "`duration_hm`"
+                    },
+                    {
+                      "name": "director",
+                      "expression": "`director`"
+                    },
+                    {
+                      "name": "budget",
+                      "expression": "`budget`"
+                    },
+                    {
+                      "name": "revenue",
+                      "expression": "`revenue`"
+                    },
+                    {
+                      "name": "profit",
+                      "expression": "`profit`"
+                    },
+                    {
+                      "name": "vote_count",
+                      "expression": "`vote_count`"
+                    }
+                  ],
+                  "disaggregated": true,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "`budget`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Top 20 Movies by Profit"
+              },
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "release_year",
+                    "columnWidth": 99,
+                    "format": {
+                      "type": "number-plain",
+                      "abbreviation": "none",
+                      "hideGroupSeparator": true
+                    },
+                    "displayName": "Year"
+                  },
+                  {
+                    "fieldName": "title",
+                    "columnWidth": 332,
+                    "displayName": "Movie"
+                  },
+                  {
+                    "fieldName": "duration_hm",
+                    "displayName": "Runtime"
+                  },
+                  {
+                    "fieldName": "director",
+                    "displayName": "Director"
+                  },
+                  {
+                    "fieldName": "budget",
+                    "format": {
+                      "type": "number-currency",
+                      "currencyCode": "USD",
+                      "abbreviation": "compact",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 1
+                      }
+                    },
+                    "displayName": "Budget"
+                  },
+                  {
+                    "fieldName": "revenue",
+                    "format": {
+                      "type": "number-currency",
+                      "currencyCode": "USD",
+                      "abbreviation": "compact",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 1
+                      }
+                    },
+                    "displayName": "Revenue"
+                  },
+                  {
+                    "fieldName": "profit",
+                    "format": {
+                      "type": "number-currency",
+                      "currencyCode": "USD",
+                      "abbreviation": "compact",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 1
+                      }
+                    },
+                    "displayName": "Profit"
+                  },
+                  {
+                    "fieldName": "vote_count",
+                    "format": {
+                      "type": "number-plain",
+                      "abbreviation": "none"
+                    },
+                    "displayName": "Votes"
+                  }
+                ],
+                "rowOrder": [
+                  {
+                    "by": "column",
+                    "field": {
+                      "index": 4
+                    }
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 12,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "movies_by_genre_pie",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top10_genres",
+                  "fields": [
+                    {
+                      "name": "measure(total_movies)",
+                      "expression": "MEASURE(`total_movies`)"
+                    },
+                    {
+                      "name": "genre",
+                      "expression": "`genre`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Top 10 Genres by Number of Movies"
+              },
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "measure(total_movies)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Number of Movies"
+                },
+                "color": {
+                  "fieldName": "genre",
+                  "legend": {
+                    "position": "right"
+                  },
+                  "displayName": "Genre",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "angle-reversed"
+                    },
+                    "mappings": [
+                      {
+                        "value": "Drama",
+                        "color": "#1F77B4"
+                      },
+                      {
+                        "value": "Comedy",
+                        "color": "#FF7F0E"
+                      },
+                      {
+                        "value": "Thriller",
+                        "color": "#2CA02C"
+                      },
+                      {
+                        "value": "Action",
+                        "color": "#D62728"
+                      },
+                      {
+                        "value": "Romance",
+                        "color": "#E377C2"
+                      },
+                      {
+                        "value": "Adventure",
+                        "color": "#9467BD"
+                      },
+                      {
+                        "value": "Crime",
+                        "color": "#8C564B"
+                      },
+                      {
+                        "value": "Horror",
+                        "color": "#7F7F7F"
+                      },
+                      {
+                        "value": "Science Fiction",
+                        "color": "#17BECF"
+                      },
+                      {
+                        "value": "Fantasy",
+                        "color": "#BCBD22"
+                      }
+                    ]
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 5,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "movies-total",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "f0c4c13a",
+                  "fields": [
+                    {
+                      "name": "measure(count)",
+                      "expression": "MEASURE(`count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": false,
+                "title": {
+                  "value": "Total Movies",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(count)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "8eeb9efc",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "f0c4c13a",
+                  "fields": [
+                    {
+                      "name": "countdistinct(director)",
+                      "expression": "COUNT(DISTINCT `director`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": false,
+                "title": {
+                  "value": "Total Directors ",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "countdistinct(director)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 7,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "bec0ebb5",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "movies_by_genre",
+                  "fields": [
+                    {
+                      "name": "countdistinct(genre)",
+                      "expression": "COUNT(DISTINCT `genre`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": false,
+                "title": {
+                  "value": "Total Genres",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "countdistinct(genre)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 10,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "top10_directors_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top10_directors_profit",
+                  "fields": [
+                    {
+                      "name": "measure(total_profit)",
+                      "expression": "MEASURE(`total_profit`)"
+                    },
+                    {
+                      "name": "director",
+                      "expression": "`director`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Top 10 Directors by Profit"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "measure(total_profit)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  },
+                  "displayName": "Profit",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "director",
+                  "displayName": "Director",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "measure(total_profit)",
+                  "legend": {
+                    "hide": true
+                  },
+                  "displayName": "Profit",
+                  "scale": {
+                    "type": "quantitative",
+                    "colorRamp": {
+                      "mode": "custom-sequential",
+                      "colors": {
+                        "start": "#9ECAE1",
+                        "end": "#08306B"
+                      }
+                    }
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 5,
+            "y": 2,
+            "width": 7,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "release_year_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f1de4873ca1e7991067f90cc5371df/datasets/01f1de4873cd17e581dd0c363fbec3cd_release_year",
+                "query": {
+                  "datasetName": "f0c4c13a",
+                  "fields": [
+                    {
+                      "name": "release_year",
+                      "expression": "`release_year`"
+                    },
+                    {
+                      "name": "release_year_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f1de4873ca1e7991067f90cc5371df/datasets/01f1de4873cd17f08390db381d94035f_release_year",
+                "query": {
+                  "datasetName": "movies_by_genre",
+                  "fields": [
+                    {
+                      "name": "release_year",
+                      "expression": "`release_year`"
+                    },
+                    {
+                      "name": "release_year_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f1de4873ca1e7991067f90cc5371df/datasets/01f1de4873cd17ef90dde33b0f4e8c81_release_year",
+                "query": {
+                  "datasetName": "top20_profit_movies",
+                  "fields": [
+                    {
+                      "name": "release_year",
+                      "expression": "`release_year`"
+                    },
+                    {
+                      "name": "release_year_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Release Year"
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "release_year",
+                    "queryName": "dashboards/01f1de4873ca1e7991067f90cc5371df/datasets/01f1de4873cd17e581dd0c363fbec3cd_release_year"
+                  },
+                  {
+                    "fieldName": "release_year",
+                    "queryName": "dashboards/01f1de4873ca1e7991067f90cc5371df/datasets/01f1de4873cd17f08390db381d94035f_release_year"
+                  },
+                  {
+                    "fieldName": "release_year",
+                    "queryName": "dashboards/01f1de4873ca1e7991067f90cc5371df/datasets/01f1de4873cd17ef90dde33b0f4e8c81_release_year"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 4,
+            "height": 1
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "canvasBackgroundColor": {
+        "light": "#1F1B2E",
+        "dark": "#0C0B1D"
+      },
+      "widgetBackgroundColor": {
+        "light": "#2A2442",
+        "dark": "#1B1833"
+      },
+      "widgetBorderColor": {
+        "light": "#5E5A80",
+        "dark": "#3F3B60"
+      },
+      "fontColor": {
+        "light": "#FDFDFD",
+        "dark": "#F5F5F5"
+      },
+      "selectionColor": {
+        "light": "#FF6EC7",
+        "dark": "#FF6EC7"
+      },
+      "visualizationColors": [
+        "#FF6EC7",
+        "#00FFF7",
+        "#BF00FF",
+        "#FF5F1F",
+        "#FFFF4D",
+        "#D9007F",
+        "#007FFF"
+      ],
+      "widgetHeaderAlignment": "LEFT",
+      "fontSettings": {
+        "widgetTitle": {
+          "fontColor": {
+            "light": "#00FFF7",
+            "dark": "#00FFF7"
+          },
+          "fontWeight": 600
+        }
+      }
+    },
+    "applyModeEnabled": false
+  }
+}
